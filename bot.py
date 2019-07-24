@@ -15,8 +15,8 @@ def get_prefix(bot, message):
     """A callable Prefix for our bot. This could be edited to allow per server prefixes."""
 
     # Notice how you can use spaces in prefixes. Try to keep them simple though.
-    if bot.user.id == config.dev_bot_id:
-        prefixes = ['??']
+    if config.in_production:
+        prefixes = ['?']
     else:
         prefixes = ['?']
     # If we are in a guild, we allow for the user to mention us or use any of the prefixes in our list.
@@ -97,7 +97,7 @@ async def main():
     set_logger()
     try:
         logger.info('Logging in...')
-        await bot.login(config.dev_token)
+        await bot.login(config.discord_bot_token)
         logger.info('Logged in')
         logger.info('Connecting to gateway...')
         await bot.connect()

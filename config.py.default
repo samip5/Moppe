@@ -1,0 +1,7 @@
+in_production = False
+
+discord_bot_token = "insert_your_token_here"
+
+twitch_client_id = "" #optional
+
+youtube_api_key = "" #optional
