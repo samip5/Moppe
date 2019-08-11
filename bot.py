@@ -54,8 +54,9 @@ def set_logger():
     logger.addHandler(fhandler)
     logger.addHandler(stdout_handler)
 
+owner_ids = config.owner_ids
 
-bot = commands.Bot(command_prefix=get_prefix, help_command=commands.DefaultHelpCommand(dm_help=True))
+bot = commands.Bot(command_prefix=get_prefix, help_command=commands.DefaultHelpCommand(dm_help=True), owner_ids = owner_ids)
 session = aiohttp.ClientSession(loop=bot.loop)
 
 game = discord.Game("Pythonized!")
@@ -65,6 +66,7 @@ initial_extensions = (
     'commands.watch',
     'commands.dice',
     'commands.rps',
+    'commands.admin',
 )
 
 
