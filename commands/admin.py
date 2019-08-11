@@ -1,13 +1,16 @@
 from discord.ext import commands
+import discord
+from library.common import checks
 
-class Util(commands.Cog):
+
+class Admin(commands.Cog):
     """Utility commands for bot management"""
 
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(hidden=True)
-    @commands.is_owner()
+    @checks.am_i_owner()
     async def reload(self, ctx, ext: str):
         """Restart given extension if found"""
         try:
@@ -21,6 +24,5 @@ class Util(commands.Cog):
             await ctx.author.send(error_message)
 
 
-
 def setup(bot):
-    bot.add_cog(Util(bot))
+    bot.add_cog(Admin(bot))
