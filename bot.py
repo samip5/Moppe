@@ -5,7 +5,6 @@ import sys
 import config
 import aiohttp
 import asyncio
-#import asyncpg
 import logging  # logging
 import logging.handlers
 import traceback
@@ -54,9 +53,8 @@ def set_logger():
     logger.addHandler(fhandler)
     logger.addHandler(stdout_handler)
 
-owner_ids = config.owner_ids
 
-bot = commands.Bot(command_prefix=get_prefix, help_command=commands.DefaultHelpCommand(dm_help=True), owner_ids = owner_ids)
+bot = commands.Bot(command_prefix=get_prefix, help_command=commands.DefaultHelpCommand(dm_help=True))
 session = aiohttp.ClientSession(loop=bot.loop)
 
 game = discord.Game("Pythonized!")
@@ -67,6 +65,7 @@ initial_extensions = (
     'commands.dice',
     'commands.rps',
     'commands.admin',
+    'commands.error_handler',
 )
 
 
