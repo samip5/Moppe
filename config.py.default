@@ -2,6 +2,8 @@ in_production = False
 
 discord_bot_token = "insert_your_token_here"
 
+database_url = "sqlite:///test.db"  # Required
+
 twitch_client_id = "" #optional
 
 youtube_api_key = "" #optional

@@ -8,6 +8,7 @@ import asyncio
 import logging  # logging
 import logging.handlers
 import traceback
+from databases import Database
 
 
 def get_prefix(bot, message):
@@ -85,6 +86,8 @@ async def on_ready():
     users = len(set(bot.get_all_members()))
     guilds = len(bot.guilds)
     channels = len([c for c in bot.get_all_channels()])
+    if not config.in_production:
+        bot.db = Database(config.database_url)
 
     await bot.change_presence(status=discord.Status.online, activity=game)
     logger.info('Logged in as {}'.format(str(bot.user)))
