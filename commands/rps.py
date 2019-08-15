@@ -1,11 +1,14 @@
 from discord.ext import commands
+import logging
 import discord
 import datetime
-
 import random
+
 
 class Rps(commands.Cog):
     """Rock Paper Scissors."""
+    global logger
+    logger = logging.getLogger("bot")
 
     def __init__(self, bot):
         self.bot = bot
@@ -52,5 +55,7 @@ class Rps(commands.Cog):
                 else:
                     await ctx.send('Sakset leikkaa paperin. Sä voitit!')
 
+
 def setup(bot):
     bot.add_cog(Rps(bot))
+

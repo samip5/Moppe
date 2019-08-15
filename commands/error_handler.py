@@ -1,11 +1,14 @@
 import traceback
 import sys
+import config
 from discord.ext import commands
 import discord
+import logging
 
 
 class CommandErrorHandler(commands.Cog):
     global logger
+    logger = logging.getLogger("bot")
 
     def __init__(self, bot):
         self.bot = bot
@@ -15,9 +18,9 @@ class CommandErrorHandler(commands.Cog):
         """The event triggered when an error is raised while invoking a command.
         ctx   : Context
         error : Exception"""
-
-        automation_channel = self.bot.get_channel(532946068967784508)
-        terminal_channel = self.bot.get_channel(538343157788704768)
+        if config.in_production:
+            automation_channel = self.bot.get_channel(532946068967784508)
+            terminal_channel = self.bot.get_channel(538343157788704768)
 
         # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):
@@ -34,22 +37,32 @@ class CommandErrorHandler(commands.Cog):
             return
 
         elif isinstance(error, commands.DisabledCommand):
+            logger.info(f"{ctx.command} on poistettu käytöstä, mutta sitä yritettiin silti käyttää.")
             return await ctx.send(f'{ctx.command} on poistettu käytöstä.')
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
-                return await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+                logger.info(f"Komentoa {ctx.command} yritettiin käyttää yksityisviestissä käyttäjän {ctx.author.display_name} "
+                            f"(Käyttäjän ID: {ctx.author.id}) toimesta, mutta sitä ei ole sallittu.")
+                return await ctx.author.send(f'{ctx.command} ei voida käyttää yksityisviesteissä.')
             except:
                 pass
+
         elif isinstance(error, commands.NotOwner):
+            logger.info(f"Komentoa {ctx.command} yritettiin käyttää vaikka ei ole Botin omistaja. "
+                        f"Käyttäjä oli {ctx.author.display_name} (ID: {ctx.author.id}).")
             return await ctx.send(f'Tämä komento on ainoastaan botin omistajalle, joka sinä et valitettavasti ole.')
+
         elif isinstance(error, commands.MissingPermissions):
             return await ctx.send(f'Tämä komento vaatii oikeuksia, mitä sinulla ei valitettavasti ole.')
+
         elif isinstance(error, commands.CheckFailure):
+            logger.warning(f"Komennon {ctx.command} oikeuksien tarkistuksessa tapahtui virhe.")
             await ctx.message.delete()
             return await ctx.send(f'Komennon oikeuksien tarkistuksessa tapahtui virhe, tarkista oletko oikealla '
                                   f'kanavalla sekä onko sinulla siihen oikeuksia.',
                                   delete_after=5)
+
         elif isinstance(error, commands.CommandInvokeError):
             logger.exception("Tapahtui virhe komennossa '{}'".format(
                 ctx.command.qualified_name), exc_info=error.original)
@@ -60,7 +73,7 @@ class CommandErrorHandler(commands.Cog):
             await automation_channel.send(oneliner)
 
         else:
-            print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+            print(f'Ignoring exception in command {ctx.command}:', file=sys.stderr)
             print(traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr))
 
 

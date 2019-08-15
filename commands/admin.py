@@ -1,10 +1,13 @@
 from discord.ext import commands
 import discord
+import logging
 from library.common import checks
 
 
 class Admin(commands.Cog):
-    """Utility commands for bot management"""
+    """Admin commands for bot management"""
+    global logger
+    logger = logging.getLogger("bot")
 
     def __init__(self, bot):
         self.bot = bot
@@ -16,11 +19,12 @@ class Admin(commands.Cog):
         try:
             extension = 'commands.' + ext
             self.bot.reload_extension(extension)
-            #print(f"Reloaded extension: {extension}")
+            logger.info(f"Reloaded extension: {extension}. Komennon suorittaja: {ctx.author.display_name} "
+                        f"(ID: {ctx.author.id}).")
             await ctx.author.send(f"Reloaded extension: {extension}")
         except Exception as e:
             error_message = f"Error on reloading extension: {e}"
-            #print(error_message)
+            logger.warning(error_message)
             await ctx.author.send(error_message)
 
 

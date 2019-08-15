@@ -1,11 +1,14 @@
 from discord.ext import commands
 import discord
 import datetime
-
 import random
+import logging
+
 
 class Dice(commands.Cog):
     """Dice machine. And some other simple random draws"""
+    global logger
+    logger = logging.getLogger("bot")
 
     def __init__(self, bot):
         self.bot = bot
@@ -37,7 +40,6 @@ class Dice(commands.Cog):
             else:
                 await ctx.send("Nostettu {}, siinä kaikki".format(','.join(targ[:items])))
 
-
     @commands.command(hidden=False, aliases=['d', 'r', 'random'])
     async def noppa(self, ctx, *arg):
         """Dice(s) throw.
@@ -59,6 +61,7 @@ class Dice(commands.Cog):
             for i in range(p_arg[1]):
                 nums.append(str(random.randint(1, p_arg[0])))
             await ctx.send(', '.join(nums))
+
 
 def setup(bot):
     bot.add_cog(Dice(bot))

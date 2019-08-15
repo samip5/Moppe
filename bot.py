@@ -17,7 +17,7 @@ def get_prefix(bot, message):
     if config.in_production:
         prefixes = ['?']
     else:
-        prefixes = ['?']
+        prefixes = ['??']
     # If we are in a guild, we allow for the user to mention us or use any of the prefixes in our list.
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
