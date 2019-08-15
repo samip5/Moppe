@@ -1,18 +1,20 @@
 from discord.ext import commands
 import discord
 import datetime
+import logging
 
 import urllib.request
 import json
-
 import config
-
 from random import randrange
-
 from library import sources
+
 
 class Watch(commands.Cog):
     """Bot utilities regarding Watch functionality (watch for new content in channels such as youtube)."""
+    global logger
+    logger = logging.getLogger("bot")
+
     def __init__(self, bot):
         self.bot = bot
         self.channels = []
