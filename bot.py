@@ -24,7 +24,7 @@ def get_prefix(bot, message):
 
 def set_logger():
     global logger
-    logger = logging.getLogger("discord")
+    logger = logging.getLogger("discord") #Log only to file
     logger.setLevel(logging.INFO)
     handler = logging.FileHandler(
         filename='discord.log', encoding='utf-8', mode='a')
@@ -34,7 +34,7 @@ def set_logger():
         datefmt="[%d.%m.%Y %H:%M]"))
     logger.addHandler(handler)
 
-    logger = logging.getLogger("bot")
+    logger = logging.getLogger("bot") #Log to file and commandline
     logger.setLevel(logging.INFO)
 
     format = logging.Formatter(
@@ -66,6 +66,7 @@ initial_extensions = (
     'commands.rps',
     'commands.admin',
     'commands.error_handler',
+    'commands.twitch',
 )
 
 

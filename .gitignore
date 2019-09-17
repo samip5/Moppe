@@ -1,6 +1,8 @@
 # Do not publish
 config.py
 tokens.ini
+twitch_channels.json
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
