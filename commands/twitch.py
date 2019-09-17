@@ -15,7 +15,7 @@ f_json = "twitch_channels.json"
 
 poll_delay = 15*60
 
-class Watch(commands.Cog):
+class Twitch(commands.Cog):
     """Bot utilities for twitch integration."""
 
     global logger
@@ -55,9 +55,9 @@ class Watch(commands.Cog):
         for c_id in self.channels:
             channel = self.twitch.channels.get_by_id(c_id)
             embed = discord.Embed(colour=0x00FF00,
-                        title = channel.display_name,
-                        url = channel.url,
-                        description = f"{channel.status}\nSeuraajia: {channel.followers}",)
+                    title = channel.display_name,
+                    url = channel.url,
+                    description = f"{channel.status}\nSeuraajia: {channel.followers}",)
             embed.set_thumbnail(url = channel.logo)
             await ctx.send(embed = embed)
 
@@ -96,9 +96,9 @@ class Watch(commands.Cog):
                     self.save_channels()
 
                     embed = discord.Embed(colour=0xFF0000,
-                                title = video.channel.display_name,
-                                url = video.channel.url,
-                                description = f"{video.channel.status}\nSeuraajia: {video.channel.followers}",)
+                            title = video.channel.display_name,
+                            url = video.channel.url,
+                            description = f"{video.channel.status}\nSeuraajia: {video.channel.followers}",)
                     embed.set_thumbnail(url = video.channel.logo)
                     await ctx.send(embed = embed)
                     logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) lisäsi kanavan: {video.channel.name} (ID:{video.channel.id})")
@@ -124,9 +124,9 @@ class Watch(commands.Cog):
                     self.save_channels()
 
                     embed = discord.Embed(colour=0xFF0000,
-                                title = users[0].display_name,
-                                url = f"https://www.twitch.tv/{users[0].name}",
-                                description = f"{users[0].bio}",)
+                            title = users[0].display_name,
+                            url = f"https://www.twitch.tv/{users[0].name}",
+                            description = f"{users[0].bio}",)
                     embed.set_thumbnail(url = users[0].logo)
                     await ctx.send(embed = embed)
                     logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) lisäsi kanavan: {users[0].name} (ID:{users[0].id})")
@@ -149,9 +149,9 @@ class Watch(commands.Cog):
                 break
         if remove:
             embed = discord.Embed(colour=0xFF0000,
-                        title = f"Poistetaan seurannasta: {channel.display_name}",
-                        url = channel.url,
-                        description = f"{channel.status}\nSeuraajia: {channel.followers}",)
+                    title = f"Poistetaan seurannasta: {channel.display_name}",
+                    url = channel.url,
+                    description = f"{channel.status}\nSeuraajia: {channel.followers}",)
             embed.set_thumbnail(url = channel.logo)
             await ctx.send(embed = embed)
             logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) poisti kanavan: {channel.name} (ID:{channel.id})")
@@ -161,10 +161,6 @@ class Watch(commands.Cog):
         else:
             await ctx.send(f"Ei löydetty kanavaa: {c_name}")
 
-
-    '''
-    @commands.command(hidden=True)
-    '''
 
     def save_channels(self):
         with open(f_json, 'w') as fp:
@@ -181,7 +177,8 @@ class Watch(commands.Cog):
 
 
     async def poll_new_videos(self):
-        time = datetime.datetime.now().replace(microsecond=0) - datetime.timedelta(seconds=self.poll_delay)
+        global poll_delay
+        time = datetime.datetime.now().replace(microsecond=0) - datetime.timedelta(seconds=poll_delay)
         #time = datetime.datetime.now().replace(microsecond=0) - datetime.timedelta(hours=24)
         logger.info(f"Tarkistetaan viimeisimpiä Twitch videoita...")
         for cid in self.channels:
@@ -189,9 +186,9 @@ class Watch(commands.Cog):
                 videos = self.twitch.channels.get_videos(cid, limit=1, broadcast_type='archive,upload')
                 if videos and videos[0]['published_at'] > time:
                     embed = discord.Embed(colour=0x0000FF,
-                                title = f"Video: {videos[0].channel.display_name}",
-                                url = videos[0].url,
-                                description = f"{videos[0].title}\nat: {videos[0].game}",)
+                            title = f"Video: {videos[0].channel.display_name}",
+                            url = videos[0].url,
+                            description = f"{videos[0].title}\nat: {videos[0].game}",)
                     embed.set_thumbnail(url = videos[0].channel.logo)
                     await self.notification_reciever.send(embed=embed)
             except Exception as e:
@@ -204,23 +201,16 @@ class Watch(commands.Cog):
         else:
             streams = []
 
-        message = f'{datetime.datetime.now().replace(microsecond=0)}, {len(streams)} streams active out of {len(self.channels)}: {[s.channel.display_name for s in streams]}'
-        #print(message)
-        #print(self.notification_reciever)
-
         new_active = []
         for stream in streams:
-            new_active.extend(int(stream.id))
-            if int(stream.id) not in self.active_streams:
+            new_active.append(stream.id)
+            if stream.id not in self.active_streams:
                 embed = discord.Embed(colour=0xFF0000,
-                            title = f"Stream: {stream.channel.display_name}",
-                            url = stream.channel.url,
-                            description = f"{stream.channel.status}\nat: {stream.channel.game}",)
+                        title = f"Stream: {stream.channel.display_name}",
+                        url = stream.channel.url,
+                        description = f"{stream.channel.status}\nat: {stream.channel.game}",)
                 embed.set_thumbnail(url = stream.channel.logo)
                 await self.notification_reciever.send(embed=embed)
-            else:
-                #print(f"{stream.id} in allready active")
-                pass
         self.active_streams = new_active.copy()
         logger.info(f"Tarkistetaan aktiivisia Twitch streameja: {[s.channel.display_name for s in streams]}")
 
@@ -230,7 +220,7 @@ class Watch(commands.Cog):
             await self.poll_active_streams()
             await self.poll_new_videos()
         else:
-            logger.info(f"Twitch poll module not loaded")
+            logger.info(f"Twitch poll module not yet fully loaded")
 
     @poll_channels.before_loop
     async def before_poll_channels(self):
@@ -248,4 +238,4 @@ class Watch(commands.Cog):
 #DONE: get latest videos and notify new videos
 
 def setup(bot):
-    bot.add_cog(Watch(bot))
+    bot.add_cog(Twitch(bot))
