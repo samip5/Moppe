@@ -26,7 +26,6 @@ class Twitch(commands.Cog):
         #self.poll_delay = 15*60
         self.channels = []
         self.active_streams = []
-        self.module_ready = False
 
         self.notification_reciever = None
 
@@ -216,21 +215,19 @@ class Twitch(commands.Cog):
 
     @tasks.loop(seconds = poll_delay)
     async def poll_channels(self):
-        if self.module_ready:
+        if self.notification_reciever:
             await self.poll_active_streams()
             await self.poll_new_videos()
         else:
-            logger.info(f"Twitch poll module not yet fully loaded")
+            logger.info(f"Twitch poll module not yet fully loaded or no channel to post to")
 
     @poll_channels.before_loop
     async def before_poll_channels(self):
         await self.bot.wait_until_ready()
         self.load_channels()
         logger.info(f"Preloading Twitch poll module")
-        self.module_ready = True
-        if hasattr(config, "my_master_id") and config.my_master_id:
-            self.notification_reciever = self.bot.get_user(config.my_master_id)
-            #print(self.notification_reciever)
+        if config.channel_to_post:
+            self.notification_reciever = self.bot.get_channel(config.channel_to_post)
 
 
 #DONE: save streams status and send only starting streams

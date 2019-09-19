@@ -1,6 +1,7 @@
 in_production = False
 
 discord_bot_token = "insert_your_token_here"
+channel_to_post = discord_channel_id
 
 twitch_client_id = "" #optional
 
