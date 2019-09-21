@@ -61,69 +61,46 @@ class Twitch(commands.Cog):
             await ctx.send(embed = embed)
 
     @twitch.group(name="video")
-    async def dispaly_channel_videos(self, ctx, cid: int):
-        """List latest videos in channels"""
-        #TODO: get videos by name instead cid
+    async def dispaly_channel_videos(self, ctx, name: str):
+        """List latest videos in channel by channel name"""
         try:
-            videos = self.twitch.channels.get_videos(cid, limit=5, broadcast_type='archive,upload')
-            if videos:
-                embed = discord.Embed(colour=0x00FF00,
-                        title = f"{videos[0].channel.display_name}",
-                        url = f"{videos[0].channel.url}")
-                for v in videos:
-                    embed.add_field(name = f"{v.title}",
-                            value = f"{v.url}",
-                            inline = True)
-                await ctx.send(embed = embed)
+            search = name.split("/")[-1:] #Jos url, otetaan lopusta kanavan nimi
+            users = self.twitch.users.translate_usernames_to_ids(search)
+            if len(users) == 1:
+                videos = self.twitch.channels.get_videos(users[0].id, limit=5, broadcast_type='archive,upload')
+                if videos:
+                    embed = discord.Embed(colour=0x00FF00,
+                            title = f"{videos[0].channel.display_name}",
+                            url = f"{videos[0].channel.url}")
+                    for v in videos:
+                        embed.add_field(name = f"{v.title}",
+                                value = f"{v.url}",
+                                inline = True)
+                    await ctx.send(embed = embed)
+                else:
+                    await ctx.send(f"Videoita ei löytynyt kanavalta {search}")
             else:
-                await ctx.send(f"No videos found in channel id {cid}")
+                await ctx.send(f"Haulla {search} löytyi {len(users)} kanavaa.\n{[u for u in users]}")
         except Exception as e:
             logger.warning(f"Error on twitch video: {e}")
 
-
-    @twitch.group(name="lisaa_video", aliases=['add_video'])
-    async def video_id_to_channel_id(self, ctx, v_id: int):
-        """Add channel to follow list from video id"""
-        #TODO: add user restriciotn!
-        try:
-            video = self.twitch.videos.get_by_id(v_id)
-            if video:
-                if int(video.channel.id) in self.channels:
-                    await ctx.send("Kanava on jo listalla")
-                else:
-                    self.channels.append(video.channel.id)
-                    self.save_channels()
-
-                    embed = discord.Embed(colour=0xFF0000,
-                            title = video.channel.display_name,
-                            url = video.channel.url,
-                            description = f"{video.channel.status}\nSeuraajia: {video.channel.followers}",)
-                    embed.set_thumbnail(url = video.channel.logo)
-                    await ctx.send(embed = embed)
-                    logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) lisäsi kanavan: {video.channel.name} (ID:{video.channel.id})")
-            else:
-                await ctx.send("Videota ei löytynyt")
-        except Exception as e:
-            logger.warning(f"Error on twitch lisaa: {e}")
-            await ctx.send(f"Kanavan lisääminen ei onnistunut")
-
     @twitch.group(name="lisaa", aliases=['add'])
-    async def name_to_channel_id(self, ctx, name: str):
-        """Add channel to follow list from channel name"""
+    async def add_channel_to_list(self, ctx, name: str):
+        """Add channel to follow list by channel name"""
         #TODO: add user restriciotn!
         try:
             search = name.split("/")[-1:] #Jos url, otetaan lopusta kanavan nimi
             users = self.twitch.users.translate_usernames_to_ids(search)
 
             if len(users) == 1:
-                if int(users[0].id) in self.channels:
+                if users[0].id in self.channels:
                     await ctx.send("Kanava on jo listalla")
                 else:
                     self.channels.append(users[0].id)
                     self.save_channels()
 
                     embed = discord.Embed(colour=0xFF0000,
-                            title = users[0].display_name,
+                            title = f"Lisätään: {users[0].display_name}",
                             url = f"https://www.twitch.tv/{users[0].name}",
                             description = f"{users[0].bio}",)
                     embed.set_thumbnail(url = users[0].logo)
@@ -136,29 +113,32 @@ class Twitch(commands.Cog):
             await ctx.send(f"Kanavan lisääminen ei onnistunut")
 
     @twitch.group(name="poista", aliases=['remove'])
-    async def remove_from_list(self, ctx, c_name: str):
-        """Remove a channel from followin list by channel name"""
-        #should this be done with twitch.users.translate_usernames_to_ids ??
+    async def remove_from_list(self, ctx, name: str):
+        """Remove a channel from following list by channel name"""
         #TODO: add user restriciotn!
-        remove = None
-        for c_id in self.channels:
-            channel = self.twitch.channels.get_by_id(c_id)
-            if channel.name == c_name or channel.display_name == c_name:
-                remove = channel.id
-                break
-        if remove:
-            embed = discord.Embed(colour=0xFF0000,
-                    title = f"Poistetaan seurannasta: {channel.display_name}",
-                    url = channel.url,
-                    description = f"{channel.status}\nSeuraajia: {channel.followers}",)
-            embed.set_thumbnail(url = channel.logo)
-            await ctx.send(embed = embed)
-            logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) poisti kanavan: {channel.name} (ID:{channel.id})")
+        try:
+            search = name.split("/")[-1:] #Jos url, otetaan lopusta kanavan nimi
+            users = self.twitch.users.translate_usernames_to_ids(search)
 
-            self.channels.remove(c_id)
-            self.save_channels()
-        else:
-            await ctx.send(f"Ei löydetty kanavaa: {c_name}")
+            if len(users) == 1:
+                if users[0].id in self.channels:
+                    embed = discord.Embed(colour=0xFF0000,
+                            title = f"Poistetaan: {users[0].display_name}",
+                            url = f"https://www.twitch.tv/{users[0].name}",
+                            description = f"{users[0].bio}",)
+                    embed.set_thumbnail(url = users[0].logo)
+                    await ctx.send(embed = embed)
+                    logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) poisti kanavan: {users[0].name} (ID:{users[0].id})")
+
+                    self.channels.remove(users[0].id)
+                    self.save_channels()
+                else:
+                    await ctx.send("Kanava ei löytynyt listalta")
+            else:
+                await ctx.send(f"Haulla {search} löytyi {len(users)} käyttäjää.\n{[u for u in users]}")
+        except Exception as e:
+            logger.warning(f"Error on twitch lisaa: {e}")
+            await ctx.send(f"Kanavan poistaminen ei onnistunut")
 
 
     def save_channels(self):
