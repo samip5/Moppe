@@ -3,6 +3,8 @@ in_production = False
 discord_bot_token = "insert_your_token_here"
 channel_to_post = discord_channel_id
 
+#https://python-twitch-client.readthedocs.io/en/latest/v5/index.html
 twitch_client_id = "" #optional
 
+#https://developers.google.com/apis-explorer/?hl=en_GB#p/youtube/v3/
 youtube_api_key = "" #optional

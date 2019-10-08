@@ -67,6 +67,7 @@ initial_extensions = (
     'commands.admin',
     'commands.error_handler',
     'commands.twitch',
+    'commands.youtube',
 )
 
 
