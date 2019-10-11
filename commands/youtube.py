@@ -40,6 +40,35 @@ class Youtube(commands.Cog):
         #self.poll_channels.cancel()
         logger.info(f"Unloading youtube poll module")
 
+    async def channel_name_to_id(self, ctx, name: str):
+        """Helper function to translate youtube channel name to id"""
+        ###TODO if original parameter is channel id, verify it
+        request = self.youtube.search().list(
+            part = "snippet",
+            maxResults = 9,
+            q = name,
+            safeSearch = "moderate",
+            type = "channel"
+        )
+        response = request.execute()
+        match = False
+        for c in response.get('items', []):
+            if c['snippet']['title'] == name:
+                match = (c['id']['channelId'], c['snippet']['title'])
+                break
+
+        if match == False:
+            for c in response.get('items', []):
+                embed = discord.Embed(colour=0x00FF00,
+                        title = f"Seaerch results:")
+                for c in response.get('items', []):
+                    embed.add_field(name = f"{c['snippet']['title']}",
+                            value = f"{c['snippet']['description']}\nhttps://www.youtube.com/channel/{c['id']['channelId']}",
+                            inline = True)
+                await ctx.send(embed = embed)
+        return match
+
+
     @commands.group()
     async def youtube(self, ctx):
         if ctx.invoked_subcommand is None:
@@ -67,15 +96,18 @@ class Youtube(commands.Cog):
     '''
 
     @youtube.group(name="video")
-    async def dispaly_channel_videos(self, ctx, id: str):
-        """List latest videos in channel by channel id"""
+    async def dispaly_channel_videos(self, ctx, name: str):
+        """List latest videos in channel by channel name
+        If searc string contains whitespace, put it inside quotes"""
         try:
-            search = id.split("/")[-1:] #Jos url, otetaan lopusta kanavan nimi
+            search = await self.channel_name_to_id(ctx, name)
+            if search == False:
+                return False
             request = self.youtube.search().list(
                 part = "snippet",
                 channelId = search[0],
                 maxResults = 3,
-                order="date",
+                order = "date",
             )
             response = request.execute()
 
@@ -91,7 +123,7 @@ class Youtube(commands.Cog):
             else:
                 await ctx.send(f"Videoita ei löytynyt kanavalta {search}")
         except Exception as e:
-            await ctx.send(f"Haulla {search} ei löytynyt kanavia")
+            await ctx.send(f"Haulla {search[1]} ei löytynyt kanavia")
             logger.warning(f"Error on youtube video: {e}")
 
     '''
