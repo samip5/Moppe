@@ -80,19 +80,23 @@ class Youtube(commands.Cog):
             except discord.Forbidden:
                 await ctx.send("Ei oikeuksia.")
 
-    '''
     @youtube.group(name="lista", aliases=['list'])
     async def dispaly_follow_list(self, ctx):
         """List channels we are following"""
-        for c_id in self.channels:
-            channel = self.youtube.channels.get_by_id(c_id)
-            embed = discord.Embed(colour=0x00FF00,
-                    title = channel.display_name,
-                    url = channel.url,
-                    description = f"{channel.status}\nSeuraajia: {channel.followers}",)
-            embed.set_thumbnail(url = channel.logo)
-            await ctx.send(embed = embed)
-    '''
+        for chan in self.channels:
+            request = self.youtube.channels().list(
+                part = "snippet",
+                id = chan[0]
+            )
+            response = request.execute()
+            if 'items' in response and len(response['items']) > 0:
+                channel = response.get('items', [])[0]
+                embed = discord.Embed(colour=0x00FF00,
+                        title = channel['snippet']['title'],
+                        url = f"https://www.youtube.com/watch?v={channel['id']}",
+                        description = channel['snippet']['description'],)
+                embed.set_thumbnail(url = channel['snippet']['thumbnails']['default']['url'])
+                await ctx.send(embed = embed)
 
     @youtube.group(name="video")
     async def dispaly_channel_videos(self, ctx, name: str):
