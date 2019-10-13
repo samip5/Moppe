@@ -41,7 +41,7 @@ class Youtube(commands.Cog):
         logger.info(f"Unloading youtube poll module")
 
     async def channel_name_to_id(self, ctx, name: str):
-        """Helper function to translate youtube channel name to id"""
+        """Helper function to get youtube channel snippet by name"""
         ###TODO if original parameter is channel id, verify it
         request = self.youtube.search().list(
             part = "snippet",
@@ -54,18 +54,17 @@ class Youtube(commands.Cog):
         match = False
         for c in response.get('items', []):
             if c['snippet']['title'] == name:
-                match = (c['id']['channelId'], c['snippet']['title'])
+                match = c
                 break
 
         if match == False:
+            embed = discord.Embed(colour=0xFF0000,
+                    title = f"Search results:")
             for c in response.get('items', []):
-                embed = discord.Embed(colour=0x00FF00,
-                        title = f"Seaerch results:")
-                for c in response.get('items', []):
-                    embed.add_field(name = f"{c['snippet']['title']}",
-                            value = f"{c['snippet']['description']}\nhttps://www.youtube.com/channel/{c['id']['channelId']}",
-                            inline = True)
-                await ctx.send(embed = embed)
+                embed.add_field(name = f"{c['snippet']['title']}",
+                        value = f"{c['snippet']['description']}\nhttps://www.youtube.com/channel/{c['id']['channelId']}",
+                        inline = True)
+            await ctx.send(embed = embed)
         return match
 
 
@@ -105,7 +104,7 @@ class Youtube(commands.Cog):
                 return False
             request = self.youtube.search().list(
                 part = "snippet",
-                channelId = search[0],
+                channelId = search['id']['channelId'],
                 maxResults = 3,
                 order = "date",
             )
@@ -123,34 +122,29 @@ class Youtube(commands.Cog):
             else:
                 await ctx.send(f"Videoita ei löytynyt kanavalta {search}")
         except Exception as e:
-            await ctx.send(f"Haulla {search[1]} ei löytynyt kanavia")
+            await ctx.send(f"Haulla {search['snippet']['title']} ei löytynyt kanavia")
             logger.warning(f"Error on youtube video: {e}")
 
-    '''
     @youtube.group(name="lisaa", aliases=['add'])
     async def add_channel_to_list(self, ctx, name: str):
         """Add channel to follow list by channel name"""
         #TODO: add user restriciotn!
         try:
-            search = name.split("/")[-1:] #Jos url, otetaan lopusta kanavan nimi
-            users = self.youtube.users.translate_usernames_to_ids(search)
-
-            if len(users) == 1:
-                if users[0].id in self.channels:
+            user = await self.channel_name_to_id(ctx, name)
+            if user:
+                if user['id']['channelId'] in [chan[0] for chan in self.channels]:
                     await ctx.send("Kanava on jo listalla")
                 else:
-                    self.channels.append(users[0].id)
+                    self.channels.append((user['id']['channelId'], user['snippet']['title']))
                     self.save_channels()
 
                     embed = discord.Embed(colour=0xFF0000,
-                            title = f"Lisätään: {users[0].display_name}",
-                            url = f"https://www.youtube.tv/{users[0].name}",
-                            description = f"{users[0].bio}",)
-                    embed.set_thumbnail(url = users[0].logo)
+                            title = f"Lisätään: {user['snippet']['title']}",
+                            url = f"https://www.youtube.tv/{user['id']['channelId']}",
+                            description = user['snippet']['description'],)
+                    embed.set_thumbnail(url = user['snippet']['thumbnails']['default']['url'])
                     await ctx.send(embed = embed)
-                    logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) lisäsi kanavan: {users[0].name} (ID:{users[0].id})")
-            else:
-                await ctx.send(f"Haulla {search} löytyi {len(users)} käyttäjää.\n{[u for u in users]}")
+                    logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) lisäsi kanavan: {user['snippet']['title']} (ID:{user['id']['channelId']})")
         except Exception as e:
             logger.warning(f"Error on youtube lisaa: {e}")
             await ctx.send(f"Kanavan lisääminen ei onnistunut")
@@ -160,25 +154,20 @@ class Youtube(commands.Cog):
         """Remove a channel from following list by channel name"""
         #TODO: add user restriciotn!
         try:
-            search = name.split("/")[-1:] #Jos url, otetaan lopusta kanavan nimi
-            users = self.youtube.users.translate_usernames_to_ids(search)
+            user = await self.channel_name_to_id(ctx, name)
+            if user and user['id']['channelId'] in [chan[0] for chan in self.channels]:
+                embed = discord.Embed(colour=0xFF0000,
+                        title = f"Poistetaan: {user['snippet']['title']}",
+                        url = f"https://www.youtube.tv/{user['id']['channelId']}",
+                        description = user['snippet']['description'],)
+                embed.set_thumbnail(url = user['snippet']['thumbnails']['default']['url'])
+                await ctx.send(embed = embed)
+                logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) poisti kanavan: {user['snippet']['title']} (ID:{user['id']['channelId']})")
 
-            if len(users) == 1:
-                if users[0].id in self.channels:
-                    embed = discord.Embed(colour=0xFF0000,
-                            title = f"Poistetaan: {users[0].display_name}",
-                            url = f"https://www.youtube.tv/{users[0].name}",
-                            description = f"{users[0].bio}",)
-                    embed.set_thumbnail(url = users[0].logo)
-                    await ctx.send(embed = embed)
-                    logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) poisti kanavan: {users[0].name} (ID:{users[0].id})")
-
-                    self.channels.remove(users[0].id)
-                    self.save_channels()
-                else:
-                    await ctx.send("Kanava ei löytynyt listalta")
-            else:
-                await ctx.send(f"Haulla {search} löytyi {len(users)} käyttäjää.\n{[u for u in users]}")
+                self.channels.remove((user['id']['channelId'], user['snippet']['title']))
+                self.save_channels()
+            elif user:
+                await ctx.send("Kanava ei löytynyt listalta")
         except Exception as e:
             logger.warning(f"Error on youtube lisaa: {e}")
             await ctx.send(f"Kanavan poistaminen ei onnistunut")
@@ -197,7 +186,7 @@ class Youtube(commands.Cog):
             self.channels = []
         logger.info(f"Ladattu {len(self.channels)} kanavaa\n{self.channels}")
 
-
+    '''
     async def poll_new_videos(self):
         global poll_delay
         time = datetime.datetime.now().replace(microsecond=0) - datetime.timedelta(seconds=poll_delay)

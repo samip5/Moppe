@@ -2,7 +2,7 @@
 config.py
 tokens.ini
 twitch_channels.json
-
+youtube_channels.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
