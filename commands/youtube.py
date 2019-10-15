@@ -132,7 +132,7 @@ class Youtube(commands.Cog):
     @youtube.group(name="lisaa", aliases=['add'])
     async def add_channel_to_list(self, ctx, name: str):
         """Add channel to follow list by channel name"""
-        # TODO: add user restriciotn!
+        # TODO: add user restriction!
         try:
             user = await self.channel_name_to_id(ctx, name)
             if user:
@@ -157,7 +157,7 @@ class Youtube(commands.Cog):
     @youtube.group(name="poista", aliases=['remove'])
     async def remove_from_list(self, ctx, name: str):
         """Remove a channel from following list by channel name"""
-        # TODO: add user restriciotn!
+        # TODO: add user restriction!
         try:
             user = await self.channel_name_to_id(ctx, name)
             if user and user['id']['channelId'] in [chan[0] for chan in self.channels]:
