@@ -9,15 +9,16 @@ import logging
 
 import config
 
-#https://developers.google.com/apis-explorer/?hl=en_GB#p/youtube/v3/
-#https://github.com/youtube/api-samples
+# https://developers.google.com/apis-explorer/?hl=en_GB#p/youtube/v3/
+# https://github.com/youtube/api-samples
 
 f_json = "youtube_channels.json"
 
 API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
 
-poll_delay = 15*60
+poll_delay = 15 * 60
+
 
 class Youtube(commands.Cog):
     """Bot utilities for youtube integration."""
@@ -27,28 +28,28 @@ class Youtube(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        #self.poll_delay = 15*60
+        # self.poll_delay = 15*60
         self.channels = []
         self.active_streams = []
 
         self.notification_reciever = None
 
-        self.youtube = build(API_SERVICE_NAME, API_VERSION, developerKey = config.youtube_api_key)
-        #self.poll_channels.start()
+        self.youtube = build(API_SERVICE_NAME, API_VERSION, developerKey=config.youtube_api_key)
+        # self.poll_channels.start()
 
     def cog_unload(self):
-        #self.poll_channels.cancel()
+        # self.poll_channels.cancel()
         logger.info(f"Unloading youtube poll module")
 
     async def channel_name_to_id(self, ctx, name: str):
         """Helper function to get youtube channel snippet by name"""
-        ###TODO if original parameter is channel id, verify it
+        # TODO if original parameter is channel id, verify it
         request = self.youtube.search().list(
-            part = "snippet",
-            maxResults = 9,
-            q = name,
-            safeSearch = "moderate",
-            type = "channel"
+            part="snippet",
+            maxResults=9,
+            q=name,
+            safeSearch="moderate",
+            type="channel"
         )
         response = request.execute()
         match = False
@@ -59,24 +60,23 @@ class Youtube(commands.Cog):
 
         if match == False:
             embed = discord.Embed(colour=0xFF0000,
-                    title = f"Search results:")
+                                  title=f"Search results:")
             for c in response.get('items', []):
-                embed.add_field(name = f"{c['snippet']['title']}",
-                        value = f"{c['snippet']['description']}\nhttps://www.youtube.com/channel/{c['id']['channelId']}",
-                        inline = True)
-            await ctx.send(embed = embed)
+                embed.add_field(name=f"{c['snippet']['title']}",
+                                value=f"{c['snippet']['description']}\nhttps://www.youtube.com/channel/{c['id']['channelId']}",
+                                inline=True)
+            await ctx.send(embed=embed)
         return match
-
 
     @commands.group()
     async def youtube(self, ctx):
         if ctx.invoked_subcommand is None:
             try:
                 embed = discord.Embed(colour=0x000000, title=f'youtube kanavat')
-                embed.add_field(name = 'Lista',
-                            value = f"Lista seuratuista kanavista: ?youtube lista\n",
-                            inline = True)
-                await ctx.send(embed = embed)
+                embed.add_field(name='Lista',
+                                value=f"Lista seuratuista kanavista: ?youtube lista\n",
+                                inline=True)
+                await ctx.send(embed=embed)
             except discord.Forbidden:
                 await ctx.send("Ei oikeuksia.")
 
@@ -85,18 +85,18 @@ class Youtube(commands.Cog):
         """List channels we are following"""
         for chan in self.channels:
             request = self.youtube.channels().list(
-                part = "snippet",
-                id = chan[0]
+                part="snippet",
+                id=chan[0]
             )
             response = request.execute()
             if 'items' in response and len(response['items']) > 0:
                 channel = response.get('items', [])[0]
                 embed = discord.Embed(colour=0x00FF00,
-                        title = channel['snippet']['title'],
-                        url = f"https://www.youtube.com/watch?v={channel['id']}",
-                        description = channel['snippet']['description'],)
-                embed.set_thumbnail(url = channel['snippet']['thumbnails']['default']['url'])
-                await ctx.send(embed = embed)
+                                      title=channel['snippet']['title'],
+                                      url=f"https://www.youtube.com/watch?v={channel['id']}",
+                                      description=channel['snippet']['description'], )
+                embed.set_thumbnail(url=channel['snippet']['thumbnails']['default']['url'])
+                await ctx.send(embed=embed)
 
     @youtube.group(name="video")
     async def dispaly_channel_videos(self, ctx, name: str):
@@ -107,22 +107,22 @@ class Youtube(commands.Cog):
             if search == False:
                 return False
             request = self.youtube.search().list(
-                part = "snippet",
-                channelId = search['id']['channelId'],
-                maxResults = 3,
-                order = "date",
+                part="snippet",
+                channelId=search['id']['channelId'],
+                maxResults=3,
+                order="date",
             )
             response = request.execute()
 
             if len(response['items']) > 0:
                 embed = discord.Embed(colour=0x00FF00,
-                        title = f"{response['items'][0]['snippet']['channelTitle']}",
-                        url = f"https://www.youtube.com/channel/{response['items'][0]['snippet']['channelId']}")
+                                      title=f"{response['items'][0]['snippet']['channelTitle']}",
+                                      url=f"https://www.youtube.com/channel/{response['items'][0]['snippet']['channelId']}")
                 for video in response.get('items', []):
-                    embed.add_field(name = f"{video['snippet']['title']}",
-                            value = f"https://www.youtube.com/watch?v={video['id']['videoId']}",
-                            inline = True)
-                await ctx.send(embed = embed)
+                    embed.add_field(name=f"{video['snippet']['title']}",
+                                    value=f"https://www.youtube.com/watch?v={video['id']['videoId']}",
+                                    inline=True)
+                await ctx.send(embed=embed)
             else:
                 await ctx.send(f"Videoita ei löytynyt kanavalta {search}")
         except Exception as e:
@@ -132,7 +132,7 @@ class Youtube(commands.Cog):
     @youtube.group(name="lisaa", aliases=['add'])
     async def add_channel_to_list(self, ctx, name: str):
         """Add channel to follow list by channel name"""
-        #TODO: add user restriciotn!
+        # TODO: add user restriciotn!
         try:
             user = await self.channel_name_to_id(ctx, name)
             if user:
@@ -143,12 +143,13 @@ class Youtube(commands.Cog):
                     self.save_channels()
 
                     embed = discord.Embed(colour=0xFF0000,
-                            title = f"Lisätään: {user['snippet']['title']}",
-                            url = f"https://www.youtube.tv/{user['id']['channelId']}",
-                            description = user['snippet']['description'],)
-                    embed.set_thumbnail(url = user['snippet']['thumbnails']['default']['url'])
-                    await ctx.send(embed = embed)
-                    logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) lisäsi kanavan: {user['snippet']['title']} (ID:{user['id']['channelId']})")
+                                          title=f"Lisätään: {user['snippet']['title']}",
+                                          url=f"https://www.youtube.tv/{user['id']['channelId']}",
+                                          description=user['snippet']['description'], )
+                    embed.set_thumbnail(url=user['snippet']['thumbnails']['default']['url'])
+                    await ctx.send(embed=embed)
+                    logger.info(
+                        f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) lisäsi kanavan: {user['snippet']['title']} (ID:{user['id']['channelId']})")
         except Exception as e:
             logger.warning(f"Error on youtube lisaa: {e}")
             await ctx.send(f"Kanavan lisääminen ei onnistunut")
@@ -156,17 +157,18 @@ class Youtube(commands.Cog):
     @youtube.group(name="poista", aliases=['remove'])
     async def remove_from_list(self, ctx, name: str):
         """Remove a channel from following list by channel name"""
-        #TODO: add user restriciotn!
+        # TODO: add user restriciotn!
         try:
             user = await self.channel_name_to_id(ctx, name)
             if user and user['id']['channelId'] in [chan[0] for chan in self.channels]:
                 embed = discord.Embed(colour=0xFF0000,
-                        title = f"Poistetaan: {user['snippet']['title']}",
-                        url = f"https://www.youtube.tv/{user['id']['channelId']}",
-                        description = user['snippet']['description'],)
-                embed.set_thumbnail(url = user['snippet']['thumbnails']['default']['url'])
-                await ctx.send(embed = embed)
-                logger.info(f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) poisti kanavan: {user['snippet']['title']} (ID:{user['id']['channelId']})")
+                                      title=f"Poistetaan: {user['snippet']['title']}",
+                                      url=f"https://www.youtube.tv/{user['id']['channelId']}",
+                                      description=user['snippet']['description'], )
+                embed.set_thumbnail(url=user['snippet']['thumbnails']['default']['url'])
+                await ctx.send(embed=embed)
+                logger.info(
+                    f"Käyttäjä {ctx.author.display_name} (Käyttäjän ID: {ctx.author.id}) poisti kanavan: {user['snippet']['title']} (ID:{user['id']['channelId']})")
 
                 self.channels.remove((user['id']['channelId'], user['snippet']['title']))
                 self.save_channels()
@@ -175,7 +177,6 @@ class Youtube(commands.Cog):
         except Exception as e:
             logger.warning(f"Error on youtube lisaa: {e}")
             await ctx.send(f"Kanavan poistaminen ei onnistunut")
-
 
     def save_channels(self):
         with open(f_json, 'w') as fp:
@@ -245,6 +246,7 @@ class Youtube(commands.Cog):
         if config.channel_to_post:
             self.notification_reciever = self.bot.get_channel(config.channel_to_post)
     '''
+
 
 def setup(bot):
     bot.add_cog(Youtube(bot))
