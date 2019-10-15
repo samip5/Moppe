@@ -15,7 +15,7 @@ def get_prefix(bot, message):
     """A callable Prefix for our bot. This could be edited to allow per server prefixes."""
 
     # Notice how you can use spaces in prefixes. Try to keep them simple though.
-    if bot.user.id == config.dev_bot_id:
+    if not config.in_production:
         prefixes = ['??']
     else:
         prefixes = ['?']
@@ -65,6 +65,7 @@ initial_extensions = (
     'commands.watch',
     'commands.dice',
     'commands.rps',
+    'commands.random'
 )
 
 
@@ -97,7 +98,10 @@ async def main():
     set_logger()
     try:
         logger.info('Logging in...')
-        await bot.login(config.dev_token)
+        if config.in_production:
+            await bot.login(config.discord_bot_token)
+        else:
+            await bot.login(config.dev_token)
         logger.info('Logged in')
         logger.info('Connecting to gateway...')
         await bot.connect()
